@@ -1,0 +1,37 @@
+- name: Deploying flask app
+  hosts: all
+  tasks:
+  - name: Blocking
+    block:
+      - name: Download and run Docker installation script
+        download_run:
+          url: https://get.docker.com/
+          dest: /tmp/get-docker.sh
+
+      - name: Ensure Docker is installed
+        apt:
+          name: python3-pip
+          state: present
+        tags: docker
+        become: true
+
+      - name: Copy Docker Compose files to the server
+        copy:
+          src: ./file.tar
+          dest: /tmp/
+          remote_src: no
+        tags: compose
+
+      - name: Extract tar file to /tmp/
+        unarchive:
+          src: /tmp/file.tar
+          dest: /tmp
+          remote_src: yes
+
+      - name: Start Docker Compose
+        command: docker compose up -d
+        args:
+          chdir: /tmp/development
+        tags: compose
+        become: true
+    when: server == "create"

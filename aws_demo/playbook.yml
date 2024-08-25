@@ -1,0 +1,84 @@
+---
+- name: Provision AWS Resources with Terraform
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - aws.yml
+  vars:
+    # iam: "ami-0e86e20dae9224db8"
+
+    path_to_terraform: "/Users/eka/faraj/my_project/pyconmy2024-ansible/aws_demo/"
+  tasks:
+  - name: Block
+    block:
+      - name: Templating it
+        template:
+          src: templates/terraform.j2
+          dest:  "{{ path_to_terraform }}deployment.tf"
+        register: file_created
+
+      - name: Initialize Terraform
+        command: terraform init
+        args:
+          chdir: "{{ path_to_terraform }}"  # Replace with your Terraform directory path
+        register: init_result
+        changed_when: "'Initialized' in init_result.stdout"
+
+      - name: Apply Terraform
+        terraform:
+          project_path: "{{ path_to_terraform }}" # Replace with your Terraform directory path
+          state: present
+        register: terraform_output
+        changed_when: "'Initialized' in terraform_output"
+
+      - name: Show Terraform output
+        debug:
+          var: terraform_output
+      # - name: Ensure Terraform is installed
+      #   command: terraform --version
+      #   register: terraform_version
+      #   changed_when: false
+      #   when: file_created is succeeded
+
+
+
+      # - name: Apply Terraform configuration
+      #   command: terraform apply -auto-approve
+      #   args:
+      #     chdir: "{{ path_to_terraform }}"  # Replace with your Terraform directory path
+      #   register: apply_result
+      #   changed_when: "'Apply complete' in apply_result.stdout"
+
+      # - name: Display Terraform output
+      #   command: terraform output
+      #   args:
+      #     chdir: "{{ path_to_terraform }}"  # Replace with your Terraform directory path
+      #   register: terraform_output
+      #   changed_when: false
+
+      # - name: Show Terraform output
+      #   debug:
+      #     var: terraform_output.stdout
+    when: plan == "create"
+
+  - name: Block
+    block:
+
+      - name: Initialize Terraform
+        command: terraform init
+        args:
+          chdir: "{{ path_to_terraform }}"  # Replace with your Terraform directory path
+        register: init_result
+        changed_when: "'Initialized' in init_result.stdout"
+
+      - name: Deleting Infra
+        command: terraform destroy -auto-approve
+        args:
+          chdir: "{{ path_to_terraform }}"  # Replace with your Terraform directory path
+        register: apply_result
+
+      - name: Show Terraform output
+        debug:
+          var: apply_result.stdout
+    when: plan == "destroy"
+
