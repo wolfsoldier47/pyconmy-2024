@@ -1,4 +1,7 @@
 #pip install boto3
+#pip install ansible
+#ansible-galaxy colelction install community.general 
+#brew install terraform
 
 
 ansible-playbook playbook.yml -e "plan=destroy" --ask-vault-pass
